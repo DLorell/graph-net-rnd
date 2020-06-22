@@ -1,4 +1,4 @@
-from src.example_submodule.example import hello_world
+from src.example import example_fn
 
 def run():
-    hello_world()
+    example_fn()
