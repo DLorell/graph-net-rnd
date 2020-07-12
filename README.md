@@ -3,6 +3,8 @@ A repository for research and development of graph-neural-network based solution
 
 The top level directories are individual projects. Enter any of them and then follow instructions below.
 
+(You may need to install tensoboard by: conda install -c conda-forge tensorboard)
+
 
 # Conda Env setup:
 
