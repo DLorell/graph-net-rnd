@@ -14,23 +14,34 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
+import traceback
+import warnings
+import sys
+
+def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+    log = file if hasattr(file,'write') else sys.stderr
+    traceback.print_stack(file=log)
+    log.write(warnings.formatwarning(message, category, filename, lineno, line))
+warnings.showwarning = warn_with_traceback
+
+
 def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--name', type=str, required=True)
-    parser.add_argument('--model-dir', type=str, default='/workspace/paper/models')
-    parser.add_argument('--output-dir', type=str, default='/workspace/paper/output')
-    parser.add_argument('--pretrained', type=str, default='/workspace/paper/models/mlclassifier_ones3_t012v3t4_lr1e-6_e95.pth')
+    parser.add_argument('--model-dir', type=str, default='/share/project/modimnet/gcnmodels')
+    parser.add_argument('--output-dir', type=str, default='output')
+    parser.add_argument('--pretrained', type=str, default='')
     parser.add_argument('--checkpoint', type=str, default='')
-    parser.add_argument('--dataset-dir', type=str, default='/workspace/paper')
+    parser.add_argument('--dataset-dir', type=str, default='data')
     parser.add_argument('--train-folds', type=str, default='012')
     parser.add_argument('--val-folds', type=str, default='3')
     parser.add_argument('--test-folds', type=str, default='4')
-    parser.add_argument('--report-path', type=str, default='/datasets/reports.json')
-    parser.add_argument('--vocab-path', type=str, default='/datasets/vocab.pkl')
-    parser.add_argument('--label-path', type=str, default='/datasets/biview/label_dict.json')
-    parser.add_argument('--log-dir', type=str, default='/workspace/paper/logs')
-    parser.add_argument('--log-freq', type=int, default=1)
+    parser.add_argument('--report-path', type=str, default='data/reports.json')
+    parser.add_argument('--vocab-path', type=str, default='data/vocab.pkl')
+    parser.add_argument('--label-path', type=str, default='data/label_dict.json')
+    parser.add_argument('--log-dir', type=str, default='logs')
+    parser.add_argument('--log-freq', type=int, default=5)
     parser.add_argument('--num-epochs', type=int, default=100)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--encoder-lr', type=float, default=1e-6)
@@ -58,7 +69,7 @@ if __name__ == '__main__':
     for k, v in vars(args).items():
         logging.info('{}: {}'.format(k, v))
 
-    writer = SummaryWriter(log_dir=os.path.join('/workspace/paper/runs', args.name))
+    writer = SummaryWriter(log_dir=os.path.join('runs', args.name))
 
     gpus = [int(_) for _ in list(args.gpus)]
     device = torch.device('cuda:{}'.format(gpus[0]) if torch.cuda.is_available() else 'cpu')
@@ -119,8 +130,10 @@ if __name__ == '__main__':
 
     CELoss = nn.CrossEntropyLoss(reduction='none')
 
-    optimizer = torch.optim.Adam(decoder_params, lr=args.decoder_lr, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [150], gamma=0.1)
+    gamma=0.1
+    optimizer = torch.optim.Adam(decoder_params, lr=args.decoder_lr*(1/gamma), weight_decay=1e-5)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [150], gamma=gamma)
+    scheduler.step(0)
 
     if args.pretrained:
         pretrained = torch.load(args.pretrained)
@@ -154,8 +167,8 @@ if __name__ == '__main__':
             images1 = images1.to(device)
             images2 = images2.to(device)
             captions = captions.to(device)
-            loss_masks = loss_masks.to(device)
-            update_masks = update_masks.to(device)
+            loss_masks = loss_masks.to(device).to(torch.bool)
+            update_masks = update_masks.to(device).to(torch.bool)
             optimizer.zero_grad()
             logits = model(images1, images2, captions[:, :, :-1], update_masks)
             logits = logits.permute(0, 3, 1, 2).contiguous()
@@ -168,6 +181,8 @@ if __name__ == '__main__':
             clip_grad_value_(model.parameters(), args.clip_value)
             optimizer.step()
 
+            print("{:.4f}% done...".format(100 * ((i+1)/len(train_loader))), end="\r")
+
         epoch_loss /= num_steps
         print('Epoch {}/{}, Loss {:.4f}'.format(epoch, args.num_epochs, epoch_loss))
         writer.add_scalar('loss', epoch_loss, epoch)
@@ -176,16 +191,16 @@ if __name__ == '__main__':
 
         if epoch % args.log_freq == 0:
 
-            # save_fname = os.path.join(args.model_dir, '{}_e{}.pth'.format(args.name, epoch))
-            # if len(gpus) > 1:
-            #     state_dict = model.module.state_dict()
-            # else:
-            #     state_dict = model.state_dict()
-            # torch.save({
-            #     'epoch': epoch,
-            #     'model_state_dict': state_dict,
-            #     'optimizer_state_dict': optimizer.state_dict(),
-            # }, save_fname)
+            save_fname = os.path.join(args.model_dir, '{}_e{}.pth'.format(args.name, epoch))
+            if len(gpus) > 1:
+                state_dict = model.module.state_dict()
+            else:
+                state_dict = model.state_dict()
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': state_dict,
+                'optimizer_state_dict': optimizer.state_dict(),
+            }, save_fname)
 
             model.dropout.eval()
             val_res = {}
