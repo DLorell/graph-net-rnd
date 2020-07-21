@@ -239,6 +239,13 @@ if __name__ == '__main__':
                         val_gts[caseid][0] += ' '.join(words)
                         val_gts[caseid][0] += ' '
 
+            if val_gts.keys() != val_res.keys():
+                print("val_gts: ")
+                print(val_gts.keys)
+                print("val_res: ")
+                print(val_res.keys())
+                assert 0==1
+                
             scores = evaluate(val_gts, val_res)
             writer.add_scalar('VAL BLEU 1', scores['Bleu_1'], epoch)
             writer.add_scalar('VAL BLEU 2', scores['Bleu_2'], epoch)
