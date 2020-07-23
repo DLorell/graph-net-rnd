@@ -147,6 +147,7 @@ class Biview_MultiSent(Dataset):
         image2 = Image.open(img2_path)
         image2 = self.transform(image2)
 
+
         label = self.label_dict[caseid]
         label = torch.tensor(label, dtype=torch.float)
 

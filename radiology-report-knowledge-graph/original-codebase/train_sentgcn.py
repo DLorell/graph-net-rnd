@@ -56,7 +56,7 @@ def get_args():
     return args
 
 
-if __name__ == '__main__':
+def main():
     args = get_args()
     args.model_dir += "/"+args.name
     if not os.path.exists(args.model_dir):
@@ -314,3 +314,141 @@ if __name__ == '__main__':
                         f2.write(test_gts[caseid][0] + '\n')
 
     writer.close()
+
+
+    validate(args, start_epoch, gpus, model, optimizer, device, val_loader, test_loader, vocab, start_epoch, val_gts, test_gts)
+
+
+
+def validate(args, epoch, gpus, model, optimizer, device, val_loader, test_loader, vocab, start_epoch, val_gts, test_gts):
+
+    print("\n\n\n")
+
+    iterations = 3
+
+    model.dropout.eval()
+    val_res = {}
+    for i, (images1, images2, labels, captions, loss_masks, update_masks, caseids) in enumerate(val_loader):
+
+        if i > iterations:
+            break
+
+        images1 = images1.to(device)
+        images2 = images2.to(device)
+        preds = model(images1, images2, stop_id=vocab('.'))
+
+        caseid = caseids[0]
+        val_res[caseid] = ['']
+        pred = preds[0].detach().cpu()
+        for isent in range(pred.size(0)):
+            words = []
+            for wid in pred[isent].tolist():
+                w = vocab.idx2word[wid]
+                if w == '<start>' or w == '<pad>':
+                    continue
+                if w == '<end>':
+                    break
+                words.append(w)
+            val_res[caseid][0] += ' '.join(words)
+            val_res[caseid][0] += ' '
+
+        if epoch == start_epoch:
+            val_gts[caseid] = ['']
+            cap = captions[0]
+            for isent in range(cap.size(0)):
+                words = []
+                for wid in cap[isent, 1:].tolist():
+                    w = vocab.idx2word[wid]
+                    if w == '<start>' or w == '<pad>':
+                        continue
+                    if w == '<end>':
+                        break
+                    words.append(w)
+                val_gts[caseid][0] += ' '.join(words)
+                val_gts[caseid][0] += ' '
+
+    if val_gts.keys() != val_res.keys():
+        print("val_gts: ")
+        print(val_gts.keys())
+        print("val_res: ")
+        print(val_res.keys())
+        print('Diff: ')
+        gts_set = set(list(val_gts.keys()))
+        res_set = set(list(val_res.keys()))
+        print(res_set.difference(gts_set))
+        assert 0==1
+
+    scores = evaluate(val_gts, val_res)
+
+    """
+    writer.add_scalar('VAL BLEU 1', scores['Bleu_1'], epoch)
+    writer.add_scalar('VAL BLEU 2', scores['Bleu_2'], epoch)
+    writer.add_scalar('VAL BLEU 3', scores['Bleu_3'], epoch)
+    writer.add_scalar('VAL BLEU 4', scores['Bleu_4'], epoch)
+    writer.add_scalar('VAL ROUGE_L', scores['ROUGE_L'], epoch)
+    writer.add_scalar('VAL CIDEr', scores['CIDEr'], epoch)
+    # writer.add_scalar('VAL Meteor', scores['METEOR'], epoch)
+    """
+
+    test_res = {}
+    for i, (images1, images2, labels, captions, loss_masks, update_masks, caseids) in enumerate(test_loader):
+
+        if i > iterations:
+            break
+
+        images1 = images1.to(device)
+        images2 = images2.to(device)
+        preds = model(images1, images2, stop_id=vocab('.'))
+
+        caseid = caseids[0]
+        test_res[caseid] = ['']
+        pred = preds[0].detach().cpu()
+        for isent in range(pred.size(0)):
+            words = []
+            for wid in pred[isent].tolist():
+                w = vocab.idx2word[wid]
+                if w == '<start>' or w == '<pad>':
+                    continue
+                if w == '<end>':
+                    break
+                words.append(w)
+            test_res[caseid][0] += ' '.join(words)
+            test_res[caseid][0] += ' '
+
+        if epoch == start_epoch:
+            test_gts[caseid] = ['']
+            cap = captions[0]
+            for isent in range(cap.size(0)):
+                words = []
+                for wid in cap[isent, 1:].tolist():
+                    w = vocab.idx2word[wid]
+                    if w == '<start>' or w == '<pad>':
+                        continue
+                    if w == '<end>':
+                        break
+                    words.append(w)
+                test_gts[caseid][0] += ' '.join(words)
+                test_gts[caseid][0] += ' '
+
+    scores = evaluate(test_gts, test_res)
+    """
+    writer.add_scalar('TEST BLEU 1', scores['Bleu_1'], epoch)
+    writer.add_scalar('TEST BLEU 2', scores['Bleu_2'], epoch)
+    writer.add_scalar('TEST BLEU 3', scores['Bleu_3'], epoch)
+    writer.add_scalar('TEST BLEU 4', scores['Bleu_4'], epoch)
+    writer.add_scalar('TEST ROUGE_L', scores['ROUGE_L'], epoch)
+    writer.add_scalar('TEST CIDEr', scores['CIDEr'], epoch)
+    # writer.add_scalar('TEST Meteor', scores['METEOR'], epoch)
+    """
+
+    """
+    with open(os.path.join(args.output_dir, '{}_test_e{}.csv'.format(args.name, epoch)), 'w') as f1:
+        with open(os.path.join(args.output_dir, '{}_test_gts.csv'.format(args.name)), 'w') as f2:
+            for caseid in test_res.keys():
+                f1.write(test_res[caseid][0] + '\n')
+                f2.write(test_gts[caseid][0] + '\n')
+    """
+
+
+if __name__ == '__main__':
+    main()
