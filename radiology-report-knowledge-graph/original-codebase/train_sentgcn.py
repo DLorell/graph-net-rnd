@@ -41,7 +41,7 @@ def get_args():
     parser.add_argument('--vocab-path', type=str, default='data/vocab.pkl')
     parser.add_argument('--label-path', type=str, default='data/label_dict.json')
     parser.add_argument('--log-dir', type=str, default='logs')
-    parser.add_argument('--log-freq', type=int, default=5)
+    parser.add_argument('--log-freq', type=int, default=1)
     parser.add_argument('--num-epochs', type=int, default=100)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--encoder-lr', type=float, default=1e-6)
@@ -58,6 +58,9 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
+    args.model_dir += "/"+args.name
+    if not os.path.exists(args.model_dir):
+        os.makedirs(args.model_dir)
 
     os.makedirs(args.model_dir, exist_ok=True)
     os.makedirs(args.output_dir, exist_ok=True)
@@ -241,11 +244,15 @@ if __name__ == '__main__':
 
             if val_gts.keys() != val_res.keys():
                 print("val_gts: ")
-                print(val_gts.keys)
+                print(val_gts.keys())
                 print("val_res: ")
                 print(val_res.keys())
+                print('Diff: ')
+                gts_set = set(list(val_gts.keys()))
+                res_set = set(list(val_res.keys()))
+                print(res_set.difference(gts_set))
                 assert 0==1
-                
+
             scores = evaluate(val_gts, val_res)
             writer.add_scalar('VAL BLEU 1', scores['Bleu_1'], epoch)
             writer.add_scalar('VAL BLEU 2', scores['Bleu_2'], epoch)
