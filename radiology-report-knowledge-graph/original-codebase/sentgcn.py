@@ -139,6 +139,9 @@ class SentGCN(nn.Module):
 
     def forward(self, images1, images2, captions=None, update_masks=None, stop_id=None, max_sents=10, max_len=30):
         cnn_feats1 = self.densenet121.features(images1)
+
+        #print(cnn_feats1.shape)
+
         cnn_feats2 = self.densenet121.features(images2)
         batch_size, _, h, w = cnn_feats1.size()
         fw_A = self.fw_A.repeat(batch_size, 1, 1)
@@ -151,13 +154,19 @@ class SentGCN(nn.Module):
             seq_len = max_len
 
         global_feats1 = cnn_feats1.mean(dim=(2, 3))
+        #print(global_feats1.shape)
         global_feats2 = cnn_feats2.mean(dim=(2, 3))
         cls_feats1 = self.cls_atten(cnn_feats1)
+        #print(cls_feats1.shape)
         cls_feats2 = self.cls_atten(cnn_feats2)
         node_feats1 = torch.cat((global_feats1.unsqueeze(1), cls_feats1), dim=1)
+        #print(node_feats1.shape)
         node_feats2 = torch.cat((global_feats2.unsqueeze(1), cls_feats2), dim=1)
         node_states1 = self.gcn(node_feats1, fw_A, bw_A)
         node_states2 = self.gcn(node_feats2, fw_A, bw_A)
+
+        #print(node_states1.shape)
+        #exit(0)
 
         sent_h = self.init_sent_h(torch.cat((global_feats1, global_feats2), dim=1))
         sent_c = self.init_sent_c(torch.cat((global_feats1, global_feats2), dim=1))

@@ -16,7 +16,7 @@ python train_sentgcn.py  --checkpoint /share/project/modimnet/gcnmodels/sentgcn_
 fi
 
 if [[ $cmd -eq 3 ]]; then
-python train_sentgcn.py --checkpoint /share/project/modimnet/gcnmodels/sentgcn_t123v4t0_pree144_lr1e-4_ctx/sentgcn_t123v4t0_pree144_lr1e-4_ctx_e99.pth --name sentgcn_t123v4t0_pree144_lr1e-4_ctx --pretrained /share/project/modimnet/gcnmodels/gcnclassifier_v1_ones3_t401v2t3_lr1e-6_e144.pth --train-folds 123 --val-folds 4 --test-folds 0 --gpus 0 --batch-size 8 --decoder-lr 1e-4 --vocab-path data/vocab.pkl
+python train_sentgcn.py --checkpoint /share/project/modimnet/gcnmodels/sentgcn_t123v4t0_pree144_lr1e-4_ctx/sentgcn_t123v4t0_pree144_lr1e-4_ctx_e100.pth --name sentgcn_t123v4t0_pree144_lr1e-4_ctx --pretrained /share/project/modimnet/gcnmodels/gcnclassifier_v1_ones3_t401v2t3_lr1e-6_e144.pth --train-folds 123 --val-folds 4 --test-folds 0 --gpus 0 --batch-size 8 --decoder-lr 1e-4 --vocab-path data/vocab.pkl
 fi
 
 if [[ $cmd -eq 4 ]]; then
