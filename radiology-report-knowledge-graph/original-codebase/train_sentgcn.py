@@ -324,11 +324,14 @@ def validate(args, epoch, gpus, model, optimizer, device, val_loader, test_loade
 
     print("\n\n\n")
 
-    iterations = 3
+    iterations = 10
 
     model.dropout.eval()
     val_res = {}
     for i, (images1, images2, labels, captions, loss_masks, update_masks, caseids) in enumerate(val_loader):
+
+        if i < 3:
+            continue
 
         if i > iterations:
             break
@@ -351,7 +354,7 @@ def validate(args, epoch, gpus, model, optimizer, device, val_loader, test_loade
                 words.append(w)
             val_res[caseid][0] += ' '.join(words)
             val_res[caseid][0] += ' '
-
+        
         if epoch == start_epoch:
             val_gts[caseid] = ['']
             cap = captions[0]
@@ -366,17 +369,10 @@ def validate(args, epoch, gpus, model, optimizer, device, val_loader, test_loade
                     words.append(w)
                 val_gts[caseid][0] += ' '.join(words)
                 val_gts[caseid][0] += ' '
-
-    if val_gts.keys() != val_res.keys():
-        print("val_gts: ")
-        print(val_gts.keys())
-        print("val_res: ")
-        print(val_res.keys())
-        print('Diff: ')
-        gts_set = set(list(val_gts.keys()))
-        res_set = set(list(val_res.keys()))
-        print(res_set.difference(gts_set))
-        assert 0==1
+        
+        print(val_res[caseid][0].replace("effusion/hemothorax ", ""))
+        print(val_gts[caseid][0])
+        exit(0)
 
     scores = evaluate(val_gts, val_res)
 

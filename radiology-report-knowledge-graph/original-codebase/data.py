@@ -142,16 +142,31 @@ class Biview_MultiSent(Dataset):
 
     def __getitem__(self, idx):
         caseid, img1_path, img2_path = self.case_list[idx].split()
+
+        # Frontal chest xray
         image1 = Image.open(img1_path)
-        image1 = self.transform(image1)
+        # Lateral chest xray
         image2 = Image.open(img2_path)
+        """
+        image1.show()
+        image2.show()
+        print(caseid)
+        exit(0)
+        #"""
+        image1 = self.transform(image1)
         image2 = self.transform(image2)
 
-
+        # A 20D binary vector encoding the label of the case based on 19class_keywords.txt
         label = self.label_dict[caseid]
+        """
+        print(label)
+        print(len(label))
+        exit(0)
+        #"""
         label = torch.tensor(label, dtype=torch.float)
 
         report = self.reports[caseid]
+
         text = ''
         if report['impression'] is not None:
             text += report['impression']
@@ -175,6 +190,12 @@ class Biview_MultiSent(Dataset):
 def sent_collate_fn(data):
     # data.sort(key=lambda x: x[-1], reverse=True)
     images1, images2, labels, captions, caseids = zip(*data)
+
+    #print(images1[0].shape)
+    #print(images2[0].shape)
+    #print(labels[0].shape)
+    #print(len(captions[0]))
+    #print(caseids[0])
 
     images1 = torch.stack(images1, 0)
     images2 = torch.stack(images2, 0)
