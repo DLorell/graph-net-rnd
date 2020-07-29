@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import cv2
 
 
@@ -27,17 +28,19 @@ def fix_ratio(image, cfg):
     h, w, c = image.shape
 
     if h >= w:
-        ratio = h * 1.0 / w
+        ratio = h / w
         h_ = cfg.long_side
         w_ = round(h_ / ratio)
     else:
-        ratio = w * 1.0 / h
+        ratio = w / h
         w_ = cfg.long_side
         h_ = round(w_ / ratio)
 
-    image = cv2.resize(image, dsize=(w_, h_), interpolation=cv2.INTER_LINEAR)
-    image = border_pad(image, cfg)
+    #image = cv2.resize(image, dsize=(w_, h_), interpolation=cv2.INTER_LINEAR)
+    image = torch.nn.functional.interpolate(torch.tensor(image).float().permute(2, 0, 1).unsqueeze(0), size=(w_, h_), mode='bilinear', align_corners=True).squeeze().permute(1, 2, 0).numpy()
 
+
+    image = border_pad(image, cfg)
     return image
 
 
@@ -46,12 +49,17 @@ def transform(image, cfg):
     if cfg.use_equalizeHist:
         image = cv2.equalizeHist(image)
 
+    """
     if cfg.gaussian_blur > 0:
         image = cv2.GaussianBlur(
             image,
             (cfg.gaussian_blur, cfg.gaussian_blur), 0)
+    """
+    image = np.expand_dims(image, -1) * np.ones((1, 1, 3))
+    assert image[:, :, 0].all() == image[:, :, 1].all() == image[:, :, 2].all()
 
-    image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+
+    #image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
     image = fix_ratio(image, cfg)
     # augmentation for train or co_train

@@ -34,7 +34,7 @@ parser.add_argument('save_path', default=None, metavar='SAVE_PATH', type=str,
                     help="Path to the saved models")
 parser.add_argument('--num_workers', default=8, type=int, help="Number of "
                     "workers for each data loader")
-parser.add_argument('--device_ids', default='0,1,2,3', type=str,
+parser.add_argument('--device_ids', default='0', type=str,
                     help="GPU indices ""comma separated, e.g. '0,1' ")
 parser.add_argument('--pre_train', default=None, type=str, help="If get"
                     "parameters from pretrained model")
@@ -79,19 +79,18 @@ def train_epoch(summary, summary_dev, cfg, args, model, dataloader,
     model.train()
     device_ids = list(map(int, args.device_ids.split(',')))
     device = torch.device('cuda:{}'.format(device_ids[0]))
-    steps = len(dataloader)
-    dataiter = iter(dataloader)
     label_header = dataloader.dataset._label_header
     num_tasks = len(cfg.num_classes)
 
     time_now = time.time()
     loss_sum = np.zeros(num_tasks)
     acc_sum = np.zeros(num_tasks)
-    for step in range(steps):
-        image, target = next(dataiter)
+
+    for step, (image, target) in enumerate(dataloader):
         image = image.to(device)
         target = target.to(device)
         output, logit_map = model(image)
+
 
         # different number of tasks
         loss = 0
@@ -242,8 +241,12 @@ def test_epoch(summary, cfg, args, model, dataloader):
 
     predlist = list(x for x in range(len(cfg.num_classes)))
     true_list = list(x for x in range(len(cfg.num_classes)))
-    for step in range(steps):
-        image, target = next(dataiter)
+
+    #for step in range(steps):
+    for step, (image, target) in enumerate(dataloader):
+        if step > steps:
+            break
+
         image = image.to(device)
         target = target.to(device)
         output, logit_map = model(image)

@@ -147,6 +147,8 @@ class Classifier(nn.Module):
                 logit_map = classifier(feat_map)
                 logit_maps.append(logit_map.squeeze())
             # (N, C, 1, 1)
+            #print(feat_map.shape)
+            #exit(0)
             feat = self.global_pool(feat_map, logit_map)
 
             if self.cfg.fc_bn:
@@ -155,6 +157,8 @@ class Classifier(nn.Module):
             feat = F.dropout(feat, p=self.cfg.fc_drop, training=self.training)
             # (N, num_class, 1, 1)
 
+            #print(feat.shape)
+            #exit(0)
             logit = classifier(feat)
             # (N, num_class)
             logit = logit.squeeze(-1).squeeze(-1)

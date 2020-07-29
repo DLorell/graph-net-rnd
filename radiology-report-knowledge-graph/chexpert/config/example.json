@@ -1,6 +1,7 @@
 {
-    "train_csv": "/Path/to/train.csv",
-    "dev_csv": "/Path/to/dev.csv",
+    "train_csv": "/share/project/modimnet/chexpert_data/train.csv",
+    "dev_csv": "/share/project/modimnet/chexpert_data/valid.csv",
+    "chexpert_data": "/share/project/modimnet/chexpert_data",
     "backbone": "densenet121",
     "width": 512,
     "height": 512,
@@ -18,7 +19,7 @@
     "enhance_index": [2,6],
     "enhance_times": 1,
     "pos_weight": [1,1,1,1,1],
-    "train_batch_size": 56,
+    "train_batch_size": 2,
     "dev_batch_size": 56,
     "pretrained": true,
     "log_every": 10,

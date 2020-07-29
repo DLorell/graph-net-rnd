@@ -15,8 +15,8 @@ class ImageDataset(Dataset):
         self._image_paths = []
         self._labels = []
         self._mode = mode
-        self.dict = [{'1.0': '1', '': '0', '0.0': '0', '-1.0': '0'},
-                     {'1.0': '1', '': '0', '0.0': '0', '-1.0': '1'}, ]
+        self.dict = [{'1': '1', '': '0', '0': '0', '-1': '0'},
+                     {'1': '1', '': '0', '0': '0', '-1': '1'}, ]
         with open(label_path) as f:
             header = f.readline().strip('\n').split(',')
             self._label_header = [
@@ -44,7 +44,8 @@ class ImageDataset(Dataset):
                                 self.cfg.enhance_index.count(index) > 0:
                             flg_enhance = True
                 # labels = ([self.dict.get(n, n) for n in fields[5:]])
-                labels = list(map(int, labels))
+
+                image_path = os.path.join(self.cfg.chexpert_data, image_path)
                 self._image_paths.append(image_path)
                 assert os.path.exists(image_path), image_path
                 self._labels.append(labels)
