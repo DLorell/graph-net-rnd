@@ -165,8 +165,9 @@ class SentGCN(nn.Module):
         node_states1 = self.gcn(node_feats1, fw_A, bw_A)
         node_states2 = self.gcn(node_feats2, fw_A, bw_A)
 
-        #print(node_states1.shape)
-        #exit(0)
+        print(cnn_feats1.shape)
+        print(node_states1.shape)
+        exit(0)
 
         sent_h = self.init_sent_h(torch.cat((global_feats1, global_feats2), dim=1))
         sent_c = self.init_sent_c(torch.cat((global_feats1, global_feats2), dim=1))
